@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>點餐系統與管理介面</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #adminSection, #loginSection { display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f4f4f4; }
+    </style>
+</head>
+<body>
+    <h1>點餐系統與管理介面</h1>
+
+    <!-- 顧客點餐區 -->
+    <div id="orderSection">
+        <h2>顧客點餐</h2>
+        <form id="orderForm">
+            <label for="name">名字：</label>
+            <input type="text" id="name" required>
+            <br><br>
+            <label for="phone">電話：</label>
+            <input type="text" id="phone" required>
+            <br><br>
+            <label for="dish">餐點：</label>
+            <select id="dish" required>
+                <option value="牛肉麵">牛肉麵</option>
+                <option value="排骨飯">排骨飯</option>
+                <option value="滷肉飯">滷肉飯</option>
+            </select>
+            <br><br>
+            <button type="submit">提交訂單</button>
+        </form>
+        <p id="orderResult">訂單結果將顯示在此處</p>
+    </div>
+
+    <!-- 後台登入區 -->
+    <div id="loginSection">
+        <h2>後台登入</h2>
+        <form id="loginForm">
+            <label for="username">帳號：</label>
+            <input type="text" id="username" required>
+            <br><br>
+            <label for="password">密碼：</label>
+            <input type="password" id="password" required>
+            <br><br>
+            <button type="submit">登入</button>
+        </form>
+        <p id="loginError" style="color: red;"></p>
+    </div>
+
+    <!-- 後台管理區 -->
+    <div id="adminSection">
+        <h2>後台管理</h2>
+        <button id="logoutButton">登出</button>
+        <h3>訂單列表</h3>
+        <table id="orderTable">
+            <thead>
+                <tr>
+                    <th>訂單編號</th>
+                    <th>顧客名字</th>
+                    <th>電話</th>
+                    <th>餐點</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 訂單資料將由 JavaScript 動態插入 -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // 模擬帳號
+        const adminUsername = 'admin';
+        const adminPassword = 'password';
+
+        // DOM 元素選取
+        const orderSection = document.getElementById('orderSection');
+        const loginSection = document.getElementById('loginSection');
+        const adminSection = document.getElementById('adminSection');
+        const loginError = document.getElementById('loginError');
+        const orderTableBody = document.querySelector('#orderTable tbody');
+        const ws = new WebSocket('ws://localhost:8080');
+        let orderCounter = 1;
+
+        // 顧客點餐表單提交
+        document.getElementById('orderForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById('name').value;
+            const phone = document.getElementById('phone').value;
+            const dish = document.getElementById('dish').value;
+
+            // 發送訂單到伺服器
+            ws.send(JSON.stringify({ type: 'newOrder', name, phone, dish }));
+
+            document.getElementById('orderResult').textContent = '訂單已提交！';
+            document.getElementById('orderForm').reset();
+        });
+
+        // 後台登入表單提交
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (username === adminUsername && password === adminPassword) {
+                loginSection.style.display = 'none';
+                adminSection.style.display = 'block';
+            } else {
+                loginError.textContent = '帳號或密碼錯誤！';
+            }
+        });
+
+        // 登出按鈕
+        document.getElementById('logoutButton').addEventListener('click', () => {
+            adminSection.style.display = 'none';
+            loginSection.style.display = 'block';
+        });
+
+        // 接收 WebSocket 訊息
+        ws.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            if (message.type === 'newOrder') {
+                addOrderToTable(message.order);
+            }
+        };
+
+        // 在表格中添加新訂單
+        function addOrderToTable(order) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${orderCounter++}</td>
+                <td>${order.name}</td>
+                <td>${order.phone}</td>
+                <td>${order.dish}</td>
+                <td><button onclick="notifyCustomer('${order.phone}')">通知顧客</button></td>
+            `;
+            orderTableBody.appendChild(row);
+        }
+
+        // 通知顧客
+        function notifyCustomer(phone) {
+            alert(`已通知顧客電話 ${phone}：您的餐點已準備完成！`);
+        }
+
+        // 初始化
+        function init() {
+            orderSection.style.display = 'block';
+            loginSection.style.display = 'block';
+            adminSection.style.display = 'none';
+        }
+        init();
+    </script>
+</body>
+</html>
