@@ -139,7 +139,7 @@
   <script>
     document.addEventListener("DOMContentLoaded", function () {
       // API 基本 URL，請將其修改為您的 ngrok 提供的真實外網 URL
-      const apiBaseUrl = "https://7334-2402-7500-9fd-b110-c46a-d722-d2d6-6abb.ngrok-free.app";
+      const apiBaseUrl = "https://7609-2402-7500-9fd-b110-c46a-d722-d2d6-6abb.ngrok-free.app";
       const orderTableBody = document.querySelector("#orderTable tbody");
       let pollingInterval;
 
@@ -202,7 +202,7 @@
 
       // 短輪詢函式
       function shortPolling() {
-        fetch(`${apiBaseUrl}/getOrders`, {
+        fetch(`http://localhost:8080/getOrders`, {
           method: "GET",
           headers: {
             "Accept": "application/json",
