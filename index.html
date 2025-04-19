@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>點餐系統</title>
+  <title>吃噶的香腸點餐系統</title>
   <style>
     /* 全局樣式 */
     body {
@@ -18,7 +18,7 @@
       margin: 0 auto;
       padding: 20px;
     }
-    /* 標題及管理員連結 */
+    /* 標題與管理員連結 */
     #header {
       position: relative;
       text-align: center;
@@ -31,6 +31,7 @@
       margin: 0;
       font-size: 24px;
     }
+    /* 管理員連結 */
     #adminLink {
       position: absolute;
       top: 50%;
@@ -45,7 +46,7 @@
       text-decoration: none;
       font-weight: bold;
     }
-    /* 點餐表單 */
+    /* 點餐表單區 */
     #orderSection {
       background-color: #fff;
       border-radius: 8px;
@@ -67,6 +68,23 @@
       font-size: 16px;
       border: 1px solid #ddd;
       border-radius: 4px;
+    }
+    /* 產品清單區 – 複選 */
+    .productItem {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+    }
+    .productItem input[type="checkbox"] {
+      margin-right: 10px;
+    }
+    .productItem label {
+      margin: 0;
+      flex: 1;
+    }
+    .productItem input[type="number"] {
+      width: 80px;
+      margin-left: 10px;
     }
     button {
       margin-top: 20px;
@@ -91,8 +109,8 @@
 <body>
   <div id="container">
     <div id="header">
-      <h1>點餐系統</h1>
-      <!-- 點擊連結進入後台管理頁面 -->
+      <h1>吃噶的香腸點餐系統</h1>
+      <!-- 點擊連結進入後台 -->
       <a id="adminLink" href="admin.html">我是管理員</a>
     </div>
     
@@ -105,15 +123,29 @@
         <label for="phone">電話：</label>
         <input type="tel" id="phone" placeholder="請輸入電話號碼" required>
         
-        <label for="dish">餐點：</label>
-        <select id="dish" required>
-          <option value="香腸">香腸</option>
-          <option value="米腸">米腸</option>
-          <option value="大腸包小腸">大腸包小腸</option>
-        </select>
-        
-        <label for="quantity">數量：</label>
-        <input type="number" id="quantity" value="1" min="1" required>
+        <!-- 複選餐點區 -->
+        <fieldset style="border: none; padding: 0; margin-top: 10px;">
+          <legend style="font-weight: bold;">請選擇餐點 (可複選)：</legend>
+          
+          <!-- 米腸 -->
+          <div class="productItem">
+            <input type="checkbox" id="item_michang" name="items" value="米腸">
+            <label for="item_michang">米腸 - $30</label>
+            <input type="number" id="qty_michang" value="0" min="0">
+          </div>
+          <!-- 香腸 -->
+          <div class="productItem">
+            <input type="checkbox" id="item_xiangchang" name="items" value="香腸">
+            <label for="item_xiangchang">香腸 - $25</label>
+            <input type="number" id="qty_xiangchang" value="0" min="0">
+          </div>
+          <!-- 大腸包小腸 -->
+          <div class="productItem">
+            <input type="checkbox" id="item_dachang" name="items" value="大腸包小腸">
+            <label for="item_dachang">大腸包小腸 - $50</label>
+            <input type="number" id="qty_dachang" value="0" min="0">
+          </div>
+        </fieldset>
         
         <button type="submit">提交訂單</button>
       </form>
@@ -122,29 +154,85 @@
   </div>
   
   <script>
-    // 請將 apiBaseUrl 更換為您實際的 ngrok 地址
-    const apiBaseUrl = "https://6269-2402-7500-9fd-b110-c46a-d722-d2d6-6abb.ngrok-free.app";
-
+    // 前台使用的 API 基本 URL
+    const apiBaseUrl = "https://6437-2402-7500-9fd-b110-c46a-d722-d2d6-6abb.ngrok-free.app";
+    // 定義產品價格
+    const productPrices = {
+      "米腸": 30,
+      "香腸": 25,
+      "大腸包小腸": 50
+    };
+    
     document.getElementById("orderForm").addEventListener("submit", async (e) => {
       e.preventDefault();
+      
       const name = document.getElementById("name").value;
       const phone = document.getElementById("phone").value;
-      const dish = document.getElementById("dish").value;
-      const quantity = document.getElementById("quantity").value;
+      
+      // 收集多選餐點資料
+      const items = [];
+      let totalPrice = 0;
+      
+      const products = [
+        { key: "米腸", checkboxId: "item_michang", qtyId: "qty_michang" },
+        { key: "香腸", checkboxId: "item_xiangchang", qtyId: "qty_xiangchang" },
+        { key: "大腸包小腸", checkboxId: "item_dachang", qtyId: "qty_dachang" }
+      ];
+      
+      products.forEach(prod => {
+        const checkbox = document.getElementById(prod.checkboxId);
+        const qtyInput = document.getElementById(prod.qtyId);
+        if (checkbox.checked) {
+          const quantity = parseInt(qtyInput.value, 10);
+          if (quantity > 0) {
+            const unitPrice = productPrices[prod.key];
+            const itemTotal = unitPrice * quantity;
+            totalPrice += itemTotal;
+            items.push({
+              dish: prod.key,
+              quantity: quantity,
+              itemTotal: itemTotal
+            });
+          }
+        }
+      });
+      
+      // 未選擇任何餐點提示
+      if (items.length === 0) {
+        document.getElementById("orderResult").textContent = "請至少選擇一種餐點且數量大於 0";
+        return;
+      }
       
       try {
         const response = await fetch(`${apiBaseUrl}/submitOrder`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, phone, dish, quantity })
+          // 將姓名、電話、多選餐點資料與總價送出
+          body: JSON.stringify({ name, phone, items, totalPrice })
         });
+        
         if (response.ok) {
-          document.getElementById("orderResult").textContent = "訂單提交成功！";
+          const data = await response.json();
+          if (data.success) {
+            const order = data.order;
+            let details = `<strong>訂單提交成功！</strong><br>`;
+            details += `餐點編號：${order.id}<br>`;
+            details += `姓名：${order.name}<br>`;
+            details += `電話：${order.phone}<br>`;
+            details += `<u>訂單明細：</u><br>`;
+            order.items.forEach(item => {
+              details += `${item.dish}：${item.quantity} 個, 小計 $${item.itemTotal}<br>`;
+            });
+            details += `<strong>總價：$${order.totalPrice}</strong>`;
+            document.getElementById("orderResult").innerHTML = details;
+          } else {
+            document.getElementById("orderResult").textContent = "訂單提交失敗！";
+          }
         } else {
           document.getElementById("orderResult").textContent = "訂單提交失敗！";
         }
       } catch (error) {
-        console.error("提交時發生錯誤：", error);
+        console.error("提交訂單時發生錯誤：", error);
         document.getElementById("orderResult").textContent = "提交時發生錯誤！";
       }
     });
