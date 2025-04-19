@@ -42,7 +42,6 @@
       border: none;
       border-radius: 5px;
       color: #000;
-      cursor: pointer;
       text-decoration: none;
       font-weight: bold;
     }
@@ -69,7 +68,7 @@
       border: 1px solid #ddd;
       border-radius: 4px;
     }
-    /* 產品清單區 – 複選 */
+    /* 產品清單 – 複選 */
     .productItem {
       margin-top: 10px;
       display: flex;
@@ -149,7 +148,8 @@
         
         <button type="submit">提交訂單</button>
       </form>
-      <p id="orderResult">訂單結果將顯示在此處</p>
+      <!-- 此處原先用來顯示結果，現已改為在新介面呈現 -->
+      <p id="orderResult"></p>
     </div>
   </div>
   
@@ -169,7 +169,7 @@
       const name = document.getElementById("name").value;
       const phone = document.getElementById("phone").value;
       
-      // 收集多選餐點資料
+      // 收集複選餐點資料與計算總價
       const items = [];
       let totalPrice = 0;
       
@@ -197,7 +197,7 @@
         }
       });
       
-      // 未選擇任何餐點提示
+      // 若未選擇任何餐點，則提示
       if (items.length === 0) {
         document.getElementById("orderResult").textContent = "請至少選擇一種餐點且數量大於 0";
         return;
@@ -207,24 +207,16 @@
         const response = await fetch(`${apiBaseUrl}/submitOrder`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          // 將姓名、電話、多選餐點資料與總價送出
           body: JSON.stringify({ name, phone, items, totalPrice })
         });
         
         if (response.ok) {
           const data = await response.json();
           if (data.success) {
-            const order = data.order;
-            let details = `<strong>訂單提交成功！</strong><br>`;
-            details += `餐點編號：${order.id}<br>`;
-            details += `姓名：${order.name}<br>`;
-            details += `電話：${order.phone}<br>`;
-            details += `<u>訂單明細：</u><br>`;
-            order.items.forEach(item => {
-              details += `${item.dish}：${item.quantity} 個, 小計 $${item.itemTotal}<br>`;
-            });
-            details += `<strong>總價：$${order.totalPrice}</strong>`;
-            document.getElementById("orderResult").innerHTML = details;
+            // 將訂單資料存入 localStorage
+            localStorage.setItem("orderDetails", JSON.stringify(data.order));
+            // 跳轉到訂單明細頁面
+            window.location.href = "orderDetails.html";
           } else {
             document.getElementById("orderResult").textContent = "訂單提交失敗！";
           }
