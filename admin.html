@@ -65,6 +65,7 @@
       font-size: 16px;
       border-radius: 5px;
       cursor: pointer;
+      transition: background-color 0.3s;
     }
     button:hover {
       background-color: #218838;
@@ -74,7 +75,7 @@
       color: red;
       text-align: center;
     }
-    /* 管理員後台 */
+    /* 管理後台面板 */
     #adminPanel {
       display: none;
       margin-top: 20px;
@@ -99,6 +100,25 @@
     tr:hover {
       background-color: #ddd;
     }
+    /* 新增取消訂單與簡訊通知按鈕 */
+    .actionButton {
+      background-color: #dc3545;
+      color: #fff;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+    .actionButton:hover {
+      background-color: #c82333;
+    }
+    .smsButton {
+      background-color: #17a2b8;
+    }
+    .smsButton:hover {
+      background-color: #138496;
+    }
     #logoutButton {
       background-color: #dc3545;
       margin-bottom: 20px;
@@ -119,7 +139,7 @@
       <h2>後台登入</h2>
       <form id="loginForm">
         <label for="username">帳號：</label>
-        <input type="text" id="username" placeholder="admin" required>
+        <input type="text" id="username" placeholder="username" required>
         <label for="password">密碼：</label>
         <input type="password" id="password" placeholder="password" required>
         <button type="submit">登入</button>
@@ -127,7 +147,7 @@
       <p id="loginError"></p>
     </div>
     
-    <!-- 管理員後台面板 -->
+    <!-- 管理後台面板 -->
     <div id="adminPanel">
       <button id="logoutButton">登出</button>
       <h3>訂單列表</h3>
@@ -137,8 +157,9 @@
             <th>訂單編號</th>
             <th>名字</th>
             <th>電話</th>
-            <th>餐點</th>
-            <th>數量</th>
+            <th>餐點內容</th>
+            <th>總價 ($)</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -148,10 +169,17 @@
   
   <script>
     document.addEventListener("DOMContentLoaded", function () {
-      // 請將 apiBaseUrl 替換為您的 ngrok 提供的實際地址
+      // 後台使用的 API 基本 URL
       const apiBaseUrl = "https://6269-2402-7500-9fd-b110-c46a-d722-d2d6-6abb.ngrok-free.app";
       const orderTableBody = document.querySelector("#orderTable tbody");
       let pollingInterval;
+      
+      // 定義產品價格對照表，若需要計算備用
+      const productPrices = {
+        "米腸": 30,
+        "香腸": 25,
+        "大腸包小腸": 50
+      };
       
       // 登入表單處理
       document.getElementById("loginForm").addEventListener("submit", function(e) {
@@ -159,7 +187,7 @@
         const username = document.getElementById("username").value;
         const password = document.getElementById("password").value;
         if (username === "admin" && password === "password") {
-          // 登入成功後：隱藏登入區、顯示後台面板，啟動訂單輪詢
+          // 登入成功後隱藏登入區、顯示後台面板，並啟動訂單輪詢
           document.getElementById("loginSection").style.display = "none";
           document.getElementById("adminPanel").style.display = "block";
           startShortPolling();
@@ -175,7 +203,41 @@
         document.getElementById("loginSection").style.display = "block";
       });
       
-      // 短輪詢函式：請求最新訂單資料
+      // 取消訂單函式
+      function cancelOrder(orderId) {
+        if (confirm("確認要取消此訂單嗎？")) {
+          fetch(`${apiBaseUrl}/cancelOrder/${orderId}`, {
+            method: "DELETE",
+            headers: { "Accept": "application/json" }
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`取消訂單失敗, 狀態碼: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then(data => {
+            alert("訂單已取消");
+            shortPolling(); // 取消後重新更新列表
+          })
+          .catch(error => {
+            console.error("取消訂單時發生錯誤:", error);
+            alert("取消訂單時發生錯誤");
+          });
+        }
+      }
+      
+      // 簡訊通知函式：利用 sms URL scheme 跳出短信APP (僅在移動裝置上有效)
+      function sendSMS(order) {
+        // 預設短信內容 (可根據需求做調整)
+        const message = `親愛的 ${order.name} 您好，您的訂單編號 ${order.id} 已完成，請儘速至門市取餐，謝謝！`;
+        // 組成 sms:// 的 URL (不同平台可能略有差異)
+        const smsUrl = `sms:${order.phone}?body=${encodeURIComponent(message)}`;
+        // 透過改變 window.location.href 來呼叫簡訊程式 (手機上會跳出簡訊APP)
+        window.location.href = smsUrl;
+      }
+      
+      // 短輪詢函式：向後端請求最新訂單資料
       function shortPolling(){
         fetch(`${apiBaseUrl}/getOrders`, {
           method: "GET",
@@ -210,14 +272,44 @@
       function updateOrdersTable(orders) {
         orderTableBody.innerHTML = "";
         orders.forEach((order, index) => {
+          let itemsText = "";
+          if (Array.isArray(order.items)) {
+            itemsText = order.items
+              .map(item => `${item.dish} (${item.quantity}個, $${item.itemTotal})`)
+              .join(" / ");
+          } else {
+            itemsText = order.dish || "";
+          }
           const row = document.createElement("tr");
           row.innerHTML = `
-            <td>${index + 1}</td>
+            <td>${order.id || index + 1}</td>
             <td>${order.name}</td>
             <td>${order.phone}</td>
-            <td>${order.dish}</td>
-            <td>${order.quantity || 1}</td>
+            <td>${itemsText}</td>
+            <td>${order.totalPrice || ''}</td>
           `;
+          // 新增操作儲存格
+          const actionCell = document.createElement("td");
+          
+          // 取消訂單按鈕
+          const cancelBtn = document.createElement("button");
+          cancelBtn.textContent = "取消訂單";
+          cancelBtn.className = "actionButton";
+          cancelBtn.addEventListener("click", function () {
+            cancelOrder(order.id);
+          });
+          actionCell.appendChild(cancelBtn);
+          
+          // 簡訊通知按鈕
+          const smsBtn = document.createElement("button");
+          smsBtn.textContent = "發送簡訊";
+          smsBtn.className = "actionButton smsButton";
+          smsBtn.addEventListener("click", function () {
+            sendSMS(order);
+          });
+          actionCell.appendChild(smsBtn);
+          
+          row.appendChild(actionCell);
           orderTableBody.appendChild(row);
         });
       }
