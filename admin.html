@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>後台管理 - 點餐系統</title>
+  <style>
+    body {
+      font-family: 'Microsoft JhengHei', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+    }
+    #container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    /* 標題 */
+    #header {
+      padding: 20px;
+      background-color: #007bff;
+      color: #fff;
+      text-align: center;
+      border-bottom: 4px solid #0056b3;
+    }
+    #header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    /* 登入表單 */
+    #loginSection {
+      max-width: 400px;
+      margin: 50px auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
+    }
+    #loginSection h2 {
+      margin-top: 0;
+      text-align: center;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input {
+      margin-top: 5px;
+      padding: 8px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    button {
+      margin-top: 20px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    #loginError {
+      margin-top: 10px;
+      color: red;
+      text-align: center;
+    }
+    /* 管理員後台 */
+    #adminPanel {
+      display: none;
+      margin-top: 20px;
+    }
+    #adminPanel table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+    tr:hover {
+      background-color: #ddd;
+    }
+    #logoutButton {
+      background-color: #dc3545;
+      margin-bottom: 20px;
+    }
+    #logoutButton:hover {
+      background-color: #c82333;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="header">
+      <h1>後台管理 - 點餐系統</h1>
+    </div>
+    
+    <!-- 登入區 -->
+    <div id="loginSection">
+      <h2>後台登入</h2>
+      <form id="loginForm">
+        <label for="username">帳號：</label>
+        <input type="text" id="username" placeholder="admin" required>
+        <label for="password">密碼：</label>
+        <input type="password" id="password" placeholder="password" required>
+        <button type="submit">登入</button>
+      </form>
+      <p id="loginError"></p>
+    </div>
+    
+    <!-- 管理員後台面板 -->
+    <div id="adminPanel">
+      <button id="logoutButton">登出</button>
+      <h3>訂單列表</h3>
+      <table id="orderTable">
+        <thead>
+          <tr>
+            <th>訂單編號</th>
+            <th>名字</th>
+            <th>電話</th>
+            <th>餐點</th>
+            <th>數量</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      // 請將 apiBaseUrl 替換為您的 ngrok 提供的實際地址
+      const apiBaseUrl = "https://7609-2402-7500-9fd-b110-c46a-d722-d2d6-6abb.ngrok-free.app";
+      const orderTableBody = document.querySelector("#orderTable tbody");
+      let pollingInterval;
+      
+      // 登入表單處理
+      document.getElementById("loginForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        if (username === "admin" && password === "password") {
+          // 登入成功後：隱藏登入區、顯示後台面板，啟動訂單輪詢
+          document.getElementById("loginSection").style.display = "none";
+          document.getElementById("adminPanel").style.display = "block";
+          startShortPolling();
+        } else {
+          document.getElementById("loginError").textContent = "帳號或密碼錯誤！";
+        }
+      });
+      
+      // 登出按鈕：停止輪詢，返回登入狀態
+      document.getElementById("logoutButton").addEventListener("click", function() {
+        clearInterval(pollingInterval);
+        document.getElementById("adminPanel").style.display = "none";
+        document.getElementById("loginSection").style.display = "block";
+      });
+      
+      // 短輪詢函式：請求最新訂單資料
+      function shortPolling(){
+        fetch(`${apiBaseUrl}/getOrders`, {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+            "ngrok-skip-browser-warning": "true"
+          },
+          cache: "no-store"
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`網路請求失敗，狀態碼: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log("取得訂單資料:", data);
+          updateOrdersTable(data);
+        })
+        .catch(error => {
+          console.error("輪詢資料時發生錯誤:", error);
+        });
+      }
+      
+      // 啟動短輪詢，每秒一次
+      function startShortPolling(){
+        console.log("開始短輪詢訂單資料...");
+        pollingInterval = setInterval(shortPolling, 1000);
+      }
+      
+      // 更新訂單表格內容
+      function updateOrdersTable(orders) {
+        orderTableBody.innerHTML = "";
+        orders.forEach((order, index) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${order.name}</td>
+            <td>${order.phone}</td>
+            <td>${order.dish}</td>
+            <td>${order.quantity || 1}</td>
+          `;
+          orderTableBody.appendChild(row);
+        });
+      }
+    });
+  </script>
+</body>
+</html>

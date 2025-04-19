@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>點餐系統</title>
+  <style>
+    /* 全局樣式 */
+    body {
+      font-family: 'Microsoft JhengHei', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+    }
+    /* 容器 */
+    #container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    /* 標題及管理員連結 */
+    #header {
+      position: relative;
+      text-align: center;
+      background-color: #007bff;
+      color: #fff;
+      padding: 20px;
+      border-bottom: 4px solid #0056b3;
+    }
+    #header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    #adminLink {
+      position: absolute;
+      top: 50%;
+      right: 20px;
+      transform: translateY(-50%);
+      background-color: #ffcc00;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      color: #000;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    /* 點餐表單 */
+    #orderSection {
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input, select {
+      margin-top: 5px;
+      padding: 8px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    button {
+      margin-top: 20px;
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      padding: 10px 15px;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    #orderResult {
+      margin-top: 20px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="header">
+      <h1>點餐系統</h1>
+      <!-- 點擊連結進入後台管理頁面 -->
+      <a id="adminLink" href="admin.html">我是管理員</a>
+    </div>
+    
+    <div id="orderSection">
+      <h2>顧客點餐</h2>
+      <form id="orderForm">
+        <label for="name">名字：</label>
+        <input type="text" id="name" placeholder="請輸入名字" required>
+        
+        <label for="phone">電話：</label>
+        <input type="tel" id="phone" placeholder="請輸入電話號碼" required>
+        
+        <label for="dish">餐點：</label>
+        <select id="dish" required>
+          <option value="牛肉麵">牛肉麵</option>
+          <option value="排骨飯">排骨飯</option>
+          <option value="滷肉飯">滷肉飯</option>
+        </select>
+        
+        <label for="quantity">數量：</label>
+        <input type="number" id="quantity" value="1" min="1" required>
+        
+        <button type="submit">提交訂單</button>
+      </form>
+      <p id="orderResult">訂單結果將顯示在此處</p>
+    </div>
+  </div>
+  
+  <script>
+    // 請將 apiBaseUrl 更換為您實際的 ngrok 地址
+    const apiBaseUrl = "https://7609-2402-7500-9fd-b110-c46a-d722-d2d6-6abb.ngrok-free.app";
+
+    document.getElementById("orderForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("name").value;
+      const phone = document.getElementById("phone").value;
+      const dish = document.getElementById("dish").value;
+      const quantity = document.getElementById("quantity").value;
+      
+      try {
+        const response = await fetch(`${apiBaseUrl}/submitOrder`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, phone, dish, quantity })
+        });
+        if (response.ok) {
+          document.getElementById("orderResult").textContent = "訂單提交成功！";
+        } else {
+          document.getElementById("orderResult").textContent = "訂單提交失敗！";
+        }
+      } catch (error) {
+        console.error("提交時發生錯誤：", error);
+        document.getElementById("orderResult").textContent = "提交時發生錯誤！";
+      }
+    });
+  </script>
+</body>
+</html>
