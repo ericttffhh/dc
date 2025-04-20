@@ -130,19 +130,24 @@
           <div class="productItem">
             <input type="checkbox" id="item_michang" name="items" value="米腸">
             <label for="item_michang">米腸 - $30</label>
-            <input type="number" id="qty_michang" value="0" min="0">
+            <input type="number" id="qty_michang" value="1" min="0">
           </div>
           <!-- 香腸 -->
           <div class="productItem">
             <input type="checkbox" id="item_xiangchang" name="items" value="香腸">
             <label for="item_xiangchang">香腸 - $25</label>
-            <input type="number" id="qty_xiangchang" value="0" min="0">
+            <input type="number" id="qty_xiangchang" value="1" min="0">
           </div>
           <!-- 大腸包小腸 -->
           <div class="productItem">
             <input type="checkbox" id="item_dachang" name="items" value="大腸包小腸">
             <label for="item_dachang">大腸包小腸 - $50</label>
-            <input type="number" id="qty_dachang" value="0" min="0">
+            <input type="number" id="qty_dachang" value="1" min="0">
+          </div>
+          <div class="productItem">
+            <input type="checkbox" id="item_drink" name="items" value="飲料">
+            <label for="item_michang">飲料 - $30</label>
+            <input type="number" id="qty_drink" value="1" min="0">
           </div>
         </fieldset>
         
@@ -159,7 +164,8 @@
     const productPrices = {
       "米腸": 30,
       "香腸": 25,
-      "大腸包小腸": 50
+      "大腸包小腸": 50,
+      "飲料": 30
     };
     
     document.getElementById("orderForm").addEventListener("submit", async (e) => {
@@ -177,7 +183,8 @@
       const products = [
         { key: "米腸", checkboxId: "item_michang", qtyId: "qty_michang" },
         { key: "香腸", checkboxId: "item_xiangchang", qtyId: "qty_xiangchang" },
-        { key: "大腸包小腸", checkboxId: "item_dachang", qtyId: "qty_dachang" }
+        { key: "大腸包小腸", checkboxId: "item_dachang", qtyId: "qty_dachang" },
+        { key: "飲料", checkboxId: "item_drink", qtyId: "qty_drink" }
       ];
       products.forEach(prod => {
         const checkbox = document.getElementById(prod.checkboxId);
