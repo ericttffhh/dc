@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>後台管理 - 點餐系統</title>
+  <link rel="icon" type="image/png" href="images/picture.png">
+  <style>
+    body {
+      font-family: 'Microsoft JhengHei', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+    }
+    #container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    /* 標題 */
+    #header {
+      padding: 20px;
+      background-color: #007bff;
+      color: #fff;
+      text-align: center;
+      border-bottom: 4px solid #0056b3;
+    }
+    #header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    /* 登入表單 */
+    #loginSection {
+      max-width: 400px;
+      margin: 50px auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
+    }
+    #loginSection h2 {
+      margin-top: 0;
+      text-align: center;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input {
+      margin-top: 5px;
+      padding: 8px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    button {
+      margin-top: 20px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    #loginError {
+      margin-top: 10px;
+      color: red;
+      text-align: center;
+    }
+    /* 管理後台面板 */
+    #adminPanel {
+      display: none;
+      margin-top: 20px;
+    }
+    /* 進行中訂單區 */
+    #activeOrdersSection, #completedOrdersSection {
+      margin-top: 20px;
+    }
+    #activeOrdersSection h3, #completedOrdersSection h3 {
+      color: #007bff;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+    tr:hover {
+      background-color: #ddd;
+    }
+    /* 操作按鈕 */
+    .actionButton {
+      background-color: #dc3545;
+      color: #fff;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+    .actionButton:hover {
+      background-color: #c82333;
+    }
+    .smsButton {
+      background-color: #17a2b8;
+    }
+    .smsButton:hover {
+      background-color: #138496;
+    }
+    .finishedButton {
+      background-color: #ffc107;
+    }
+    .finishedButton:hover {
+      background-color: #e0a800;
+    }
+    .revertButton {
+      background-color: #6c757d;
+    }
+    .revertButton:hover {
+      background-color: #5a6268;
+    }
+    #logoutButton {
+      background-color: #dc3545;
+      margin-bottom: 20px;
+    }
+    #logoutButton:hover {
+      background-color: #c82333;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="header">
+      <h1>後台管理 - 點餐系統</h1>
+    </div>
+    
+    <!-- 登入區 -->
+    <div id="loginSection">
+      <h2>後台登入</h2>
+      <form id="loginForm">
+        <label for="username">帳號：</label>
+        <input type="text" id="username" placeholder="username" required />
+        <label for="password">密碼：</label>
+        <input type="password" id="password" placeholder="password" required />
+        <button type="submit">登入</button>
+      </form>
+      <p id="loginError"></p>
+    </div>
+    
+    <!-- 管理後台面板 -->
+    <div id="adminPanel">
+      <button id="logoutButton">登出</button>
+      
+      <!-- 進行中訂單區 -->
+      <div id="activeOrdersSection">
+        <h3>進行中訂單</h3>
+        <table id="activeOrderTable">
+          <thead>
+            <tr>
+              <th>訂單編號</th>
+              <th>名字</th>
+              <th>電話</th>
+              <th>餐點內容</th>
+              <th>總價 ($)</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      
+      <!-- 已完成訂單區 -->
+      <div id="completedOrdersSection">
+        <h3>已完成訂單</h3>
+        <table id="completedOrderTable">
+          <thead>
+            <tr>
+              <th>訂單編號</th>
+              <th>名字</th>
+              <th>電話</th>
+              <th>餐點內容</th>
+              <th>總價 ($)</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      // 後台 API 基本 URL
+      const apiBaseUrl = "https://dcericqwserver-d5e2baa5fgamavee.japaneast-01.azurewebsites.net/";
+      const activeTbody = document.querySelector("#activeOrderTable tbody");
+      const completedTbody = document.querySelector("#completedOrderTable tbody");
+      let pollingInterval;
+      // 全域變數，用來儲存目前取得的訂單資料
+      let currentActiveOrders = [];
+      let currentCompletedOrders = [];
+
+      // 登入表單處理
+      document.getElementById("loginForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        if (username === "admin" && password === "password") {
+          document.getElementById("loginSection").style.display = "none";
+          document.getElementById("adminPanel").style.display = "block";
+          startShortPolling();
+        } else {
+          document.getElementById("loginError").textContent = "帳號或密碼錯誤！";
+        }
+      });
+
+      // 登出處理
+      document.getElementById("logoutButton").addEventListener("click", function () {
+        clearInterval(pollingInterval);
+        document.getElementById("adminPanel").style.display = "none";
+        document.getElementById("loginSection").style.display = "block";
+      });
+
+      // 取消訂單函式
+      function cancelOrder(orderId) {
+        if (confirm("確認要取消此訂單嗎？")) {
+          fetch(`${apiBaseUrl}/cancelOrder/${orderId}`, {
+            method: "DELETE",
+            headers: { "Accept": "application/json" }
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`取消訂單失敗, 狀態碼: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then(data => {
+            alert("訂單已取消");
+            shortPolling();
+          })
+          .catch(error => {
+            console.error("取消訂單時發生錯誤:", error);
+            alert("取消訂單時發生錯誤");
+          });
+        }
+      }
+
+      // 簡訊通知函式
+      function sendSMS(order) {
+        const message = `親愛的 ${order.name} 您好，您的訂單編號 ${order.id} 已完成，請儘速至門市取餐，謝謝！`;
+        const smsUrl = `sms:${order.phone}?body=${encodeURIComponent(message)}`;
+        window.location.href = smsUrl;
+      }
+
+      // 標記訂單為已完成函式 (呼叫 PUT /completeOrder/:id)
+      function completeOrder(orderId) {
+        if (confirm("確認標記此訂單為已完成？")) {
+          fetch(`${apiBaseUrl}/completeOrder/${orderId}`, {
+            method: "PUT",
+            headers: {"Accept": "application/json"}
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`完成訂單失敗, 狀態碼: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then(data => {
+            alert("訂單已標記為完成");
+            shortPolling();
+          })
+          .catch(error => {
+            console.error("標記完成時發生錯誤:", error);
+            alert("標記完成時發生錯誤");
+          });
+        }
+      }
+
+      // 返回已完成訂單 (呼叫 PUT /revertCompletedOrder/:id)
+      function revertCompleted(orderId) {
+        if (confirm("確認要將此已完成訂單返回進行中？")) {
+          fetch(`${apiBaseUrl}/revertCompletedOrder/${orderId}`, {
+            method: "PUT",
+            headers: {"Accept": "application/json"}
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`返回訂單失敗, 狀態碼: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then(data => {
+            alert("訂單已返回進行中");
+            shortPolling();
+          })
+          .catch(error => {
+            console.error("返回訂單時發生錯誤:", error);
+            alert("返回訂單時發生錯誤");
+          });
+        }
+      }
+
+      // 短輪詢函式：先取得進行中訂單，再取得已完成訂單
+      function shortPolling() {
+        // 取得進行中訂單
+        fetch(`${apiBaseUrl}/getOrders`, {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+            "ngrok-skip-browser-warning": "true"
+          },
+          cache: "no-store"
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`進行中訂單請求失敗，狀態碼: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(activeData => {
+          currentActiveOrders = activeData;
+          // 再取得已完成訂單，這裡也加入 ngrok-skip-browser-warning 標頭
+          fetch(`${apiBaseUrl}/getCompletedOrders`, {
+            method: "GET",
+            headers: {
+              "Accept": "application/json",
+              "ngrok-skip-browser-warning": "true"
+            },
+            cache: "no-store"
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`已完成訂單請求失敗，狀態碼: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then(completedData => {
+            currentCompletedOrders = completedData;
+            updateOrdersTable();
+          })
+          .catch(error => {
+            console.error("取得已完成訂單時發生錯誤:", error);
+          });
+        })
+        .catch(error => {
+          console.error("取得進行中訂單時發生錯誤:", error);
+        });
+      }
+
+      // 啟動短輪詢，每秒一次
+      function startShortPolling() {
+        console.log("開始輪詢訂單資料...");
+        pollingInterval = setInterval(shortPolling, 1000);
+      }
+
+      // 更新訂單表格：分別更新進行中與已完成區
+      function updateOrdersTable() {
+        activeTbody.innerHTML = "";
+        completedTbody.innerHTML = "";
+        currentActiveOrders.forEach(order => {
+          const row = document.createElement("tr");
+          let itemsText = "";
+          if (Array.isArray(order.items)) {
+            itemsText = order.items
+              .map(item => `${item.dish} (${item.quantity}個, $${item.itemTotal})`)
+              .join(" / ");
+          }
+          row.innerHTML = `
+            <td>${order.id}</td>
+            <td>${order.name}</td>
+            <td>${order.phone}</td>
+            <td>${itemsText}</td>
+            <td>${order.totalPrice || ''}</td>
+            <td></td>
+          `;
+          const actionCell = row.querySelector("td:last-child");
+          // 進行中訂單：取消、簡訊通知、標記完成
+          const cancelBtn = document.createElement("button");
+          cancelBtn.textContent = "取消訂單";
+          cancelBtn.className = "actionButton";
+          cancelBtn.addEventListener("click", function () {
+            cancelOrder(order.id);
+          });
+          actionCell.appendChild(cancelBtn);
+          
+          const smsBtn = document.createElement("button");
+          smsBtn.textContent = "發送簡訊";
+          smsBtn.className = "actionButton smsButton";
+          smsBtn.addEventListener("click", function () {
+            sendSMS(order);
+          });
+          actionCell.appendChild(smsBtn);
+          
+          const finishBtn = document.createElement("button");
+          finishBtn.textContent = "已完成";
+          finishBtn.className = "actionButton finishedButton";
+          finishBtn.addEventListener("click", function () {
+            completeOrder(order.id);
+          });
+          actionCell.appendChild(finishBtn);
+          
+          activeTbody.appendChild(row);
+        });
+
+        currentCompletedOrders.forEach(order => {
+          const row = document.createElement("tr");
+          let itemsText = "";
+          if (Array.isArray(order.items)) {
+            itemsText = order.items
+              .map(item => `${item.dish} (${item.quantity}個, $${item.itemTotal})`)
+              .join(" / ");
+          }
+          row.innerHTML = `
+            <td>${order.id}</td>
+            <td>${order.name}</td>
+            <td>${order.phone}</td>
+            <td>${itemsText}</td>
+            <td>${order.totalPrice || ''}</td>
+            <td></td>
+          `;
+          const actionCell = row.querySelector("td:last-child");
+          // 已完成訂單：僅提供發送簡訊和返回處理按鈕
+          const smsBtn = document.createElement("button");
+          smsBtn.textContent = "發送簡訊";
+          smsBtn.className = "actionButton smsButton";
+          smsBtn.addEventListener("click", function () {
+            sendSMS(order);
+          });
+          actionCell.appendChild(smsBtn);
+          
+          const revertBtn = document.createElement("button");
+          revertBtn.textContent = "返回處理";
+          revertBtn.className = "actionButton revertButton";
+          revertBtn.addEventListener("click", function () {
+            revertCompleted(order.id);
+          });
+          actionCell.appendChild(revertBtn);
+          
+          completedTbody.appendChild(row);
+        });
+      }
+    });
+  </script>
+</body>
+</html>
