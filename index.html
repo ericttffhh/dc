@@ -12,12 +12,15 @@
       margin: 0;
       padding: 0;
       background-color: #f9f9f9;
+      position: relative;
+      min-height: 100vh;
     }
     /* 容器 */
     #container {
       max-width: 960px;
       margin: 0 auto;
       padding: 20px;
+      padding-bottom: 80px; /* 給 footer 留空間 */
     }
     /* 標題與管理員連結 */
     #header {
@@ -104,6 +107,40 @@
       margin-top: 20px;
       font-size: 16px;
     }
+    /* 頁尾，顯示製作人員 */
+    footer {
+      text-align: center;
+      font-size: 14px;
+      color: #666;
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      background-color: #f9f9f9;
+      padding: 10px 0;
+      border-top: 1px solid #ddd;
+    }
+    /* 懸浮球 */
+    #floatingBall {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background-color: #007bff;
+      color: #fff;
+      text-align: center;
+      line-height: 60px;
+      font-size: 24px;
+      text-decoration: none;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      transition: background-color 0.3s, transform 0.3s;
+      z-index: 1000;
+    }
+    #floatingBall:hover {
+      background-color: #0056b3;
+      transform: scale(1.1);
+    }
   </style>
 </head>
 <body>
@@ -171,7 +208,18 @@
       <p id="orderResult"></p>
     </div>
   </div>
-  
+
+  <!-- 頁尾顯示製作人員 -->
+  <footer>
+    網頁製作人員: 陳秉洋<br>
+    製作人IG: Ericqw.___.1230  <br>   
+    電子乙IG: tcivs_.eze
+  </footer>
+
+  <!-- 懸浮球，點擊後導向特定連結 -->
+  <a id="floatingBall" href="https://www.instagram.com/tcivs_.eze?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank">IG
+  </a>
+
   <script>
     // 前台 API 基本 URL
     const apiBaseUrl = "https://dcericqwserver-d5e2baa5fgamavee.japaneast-01.azurewebsites.net/";
@@ -180,10 +228,10 @@
       "米腸": 30,
       "香腸": 30,
       "大腸包小腸": 50,
-      "炙燒骰子牛":60,
-      "紅茶":20,
-      "綠茶":20,
-      "冬瓜茶":20
+      "炙燒骰子牛": 60,
+      "紅茶": 20,
+      "綠茶": 20,
+      "冬瓜茶": 20
     };
     
     document.getElementById("orderForm").addEventListener("submit", async (e) => {
