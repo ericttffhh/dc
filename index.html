@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>吃噶的香腸點餐系統</title>
+  <title>腸腸想你點餐系統</title>
   <link rel="icon" type="image/png" href="images/picture.png">
   <style>
     /* 全局樣式 */
@@ -109,7 +109,7 @@
 <body>
   <div id="container">
     <div id="header">
-      <h1>點餐系統</h1>
+      <h1>腸腸想你點餐系統</h1>
       <!-- 點擊連結進入後台 -->
       <a id="adminLink" href="admin.html">我是管理員</a>
     </div>
@@ -135,7 +135,7 @@
           <!-- 香腸 -->
           <div class="productItem">
             <input type="checkbox" id="item_xiangchang" name="items" value="香腸">
-            <label for="item_xiangchang">香腸 - $25</label>
+            <label for="item_xiangchang">香腸 - $30</label>
             <input type="number" id="qty_xiangchang" value="1" min="0">
           </div>
           <!-- 大腸包小腸 -->
@@ -145,9 +145,24 @@
             <input type="number" id="qty_dachang" value="1" min="0">
           </div>
           <div class="productItem">
-            <input type="checkbox" id="item_drink" name="items" value="飲料">
-            <label for="item_michang">飲料 - $30</label>
-            <input type="number" id="qty_drink" value="1" min="0">
+            <input type="checkbox" id="item_cow" name="items" value="炙燒骰子牛">
+            <label for="item_cow">炙燒骰子牛 - $60</label>
+            <input type="number" id="qty_cow" value="1" min="0">
+          </div>
+          <div class="productItem">
+            <input type="checkbox" id="item_red" name="items" value="紅茶">
+            <label for="item_red">紅茶 - $20</label>
+            <input type="number" id="qty_red" value="1" min="0">
+          </div>
+          <div class="productItem">
+            <input type="checkbox" id="item_green" name="items" value="綠茶">
+            <label for="item_green">綠茶 - $20</label>
+            <input type="number" id="qty_green" value="1" min="0">
+          </div>
+          <div class="productItem">
+            <input type="checkbox" id="item_dg" name="items" value="冬瓜茶">
+            <label for="item_dg">冬瓜茶 - $20</label>
+            <input type="number" id="qty_dg" value="1" min="0">
           </div>
         </fieldset>
         
@@ -163,9 +178,12 @@
     // 定義產品價格
     const productPrices = {
       "米腸": 30,
-      "香腸": 25,
+      "香腸": 30,
       "大腸包小腸": 50,
-      "飲料": 30
+      "炙燒骰子牛":60,
+      "紅茶":20,
+      "綠茶":20,
+      "冬瓜茶":20
     };
     
     document.getElementById("orderForm").addEventListener("submit", async (e) => {
@@ -184,7 +202,10 @@
         { key: "米腸", checkboxId: "item_michang", qtyId: "qty_michang" },
         { key: "香腸", checkboxId: "item_xiangchang", qtyId: "qty_xiangchang" },
         { key: "大腸包小腸", checkboxId: "item_dachang", qtyId: "qty_dachang" },
-        { key: "飲料", checkboxId: "item_drink", qtyId: "qty_drink" }
+        { key: "炙燒骰子牛", checkboxId: "item_cow", qtyId: "qty_cow" },
+        { key: "紅茶", checkboxId: "item_red", qtyId: "qty_red" },
+        { key: "綠茶", checkboxId: "item_green", qtyId: "qty_green" },
+        { key: "冬瓜茶", checkboxId: "item_dg", qtyId: "qty_dg" }
       ];
       products.forEach(prod => {
         const checkbox = document.getElementById(prod.checkboxId);
